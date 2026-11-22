@@ -2,10 +2,19 @@
 
 ## 1. What did a fresh session get wrong or ask about that an earlier round had already settled? What was missing from the repository that would have prevented it?
 
-*(Your call — this needs your own memory of running the six fresh sessions, since the
-handoff files summarize decisions but not everything that was asked along the way. Look
-back at the actual sessions (you'll have the transcripts anyway) and name one concrete
-moment.)*
+In Round 2, the fresh session asked me what should happen if the player typed something
+invalid at the new "Play again? (y/n)" prompt — should it quit, or ask again? But this was
+already settled, in general form, back in Round 1's `CLAUDE.md` (commit `ff9d689`):
+*"Never let invalid input crash the program — always re-prompt."* That rule isn't scoped
+to the move prompt specifically — it's a standing rule for the whole program. The session
+could have applied it directly to the new prompt instead of stopping to ask.
+
+Nothing was actually missing from the repository — the rule was already there, stated
+generally enough to cover this case. The session asked anyway, which I'd read as
+reasonable caution rather than a real gap: a one-line rule in a file is a weaker signal
+than an explicit "this applies to every prompt, including ones that don't exist yet," and
+asking a genuinely ambiguous-sounding question costs one round-trip, while guessing wrong
+on "does the game quit or continue" would have been a worse outcome to fix later.
 
 ## 2. In the round that changed an earlier requirement, what broke? Did the tests catch it, and does the decision record explain the change to someone who was not there?
 
@@ -57,6 +66,19 @@ def test_prefers_win_over_block(self):
 
 ## 4. Choose one commit you would now write differently, and say how.
 
-*(Your call — pick one from any of the three repos' histories and say what you'd change
-and why. A `git log --oneline` in any of the three project folders will refresh your
-memory.)*
+`tictactoe`, commit `f16a38b`: *"Implement undo (R10-R12); fix syntax error in the undo
+tests."* The message itself admits two unrelated things landed in one commit: the real
+undo feature, and a fix for a broken string literal in a test. Checking the diff
+confirms where the error came from — the commit message says *"The previous commit's
+test file had a broken string literal (a newline escape expanded by the shell); this
+commit fixes it"* — so the mistake was already sitting in the prior commit, `3e4d84b`
+("Add failing tests for undo"), not introduced fresh here.
+
+What I'd do differently: split it into two commits, fix first. `3e4d84b` should never
+have been committed with a syntax error in it at all — running the tests right after
+writing them would have caught it immediately, before it became a committed mistake. But
+given that it happened, the right repair is its own commit ("Fix syntax error in R10 undo
+test"), separate from and before "Implement undo (R10-R12)" — not folded into the feature
+commit's message as an afterthought. That keeps each commit doing exactly one thing, which
+is what the assignment's "one change per commit" rule is actually for: a history where
+every commit leaves the suite in a state you could bisect to.
